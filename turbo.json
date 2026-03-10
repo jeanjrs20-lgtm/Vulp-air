@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["API_PROXY_TARGET", "NEXT_PUBLIC_API_URL"],
   "tasks": {
     "dev": {
       "cache": false,
