@@ -30,7 +30,27 @@ export const createApiClient = ({ baseUrl, getToken }: ApiClientOptions) => {
       body: options.body ? JSON.stringify(options.body) : undefined
     });
 
-    const payload = (await response.json()) as ApiEnvelope<T>;
+    const rawBody = await response.text();
+    let payload: ApiEnvelope<T> | null = null;
+
+    if (rawBody) {
+      try {
+        payload = JSON.parse(rawBody) as ApiEnvelope<T>;
+      } catch {
+        payload = null;
+      }
+    }
+
+    if (!payload) {
+      const proxyFailureMessage =
+        "API indisponivel ou proxy configurado incorretamente. Verifique o deploy da API e a variavel API_PROXY_TARGET.";
+
+      if (!response.ok) {
+        throw new Error(proxyFailureMessage);
+      }
+
+      throw new Error("Resposta invalida da API.");
+    }
 
     if (!response.ok || payload.error) {
       throw new Error(payload.error?.message ?? "Erro na API");

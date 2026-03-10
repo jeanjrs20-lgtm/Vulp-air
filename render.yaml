@@ -21,6 +21,8 @@ services:
         generateValue: true
       - key: RUN_DATABASE_MIGRATIONS
         value: "true"
+      - key: RUN_DATABASE_SEED
+        value: "false"
       - key: STORAGE_DRIVER
         value: local
       - key: STORAGE_LOCAL_PATH

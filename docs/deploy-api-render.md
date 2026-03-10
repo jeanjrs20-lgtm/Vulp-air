@@ -48,6 +48,7 @@ NODE_ENV=production
 PORT=10000
 JWT_SECRET=gere-um-segredo-forte
 RUN_DATABASE_MIGRATIONS=true
+RUN_DATABASE_SEED=false
 STORAGE_DRIVER=local
 STORAGE_LOCAL_PATH=../../storage
 PUBLIC_WEB_URL=https://SEU-FRONTEND.vercel.app
@@ -88,6 +89,14 @@ prisma migrate deploy
 ```
 
 quando `RUN_DATABASE_MIGRATIONS=true`.
+
+Se quiser subir o ambiente demo com os usuarios seed:
+
+```bash
+RUN_DATABASE_SEED=true
+```
+
+Isso cria ou atualiza os usuarios demo, clientes e dados seed. Em ambiente definitivo, depois do primeiro deploy, volte para `false`.
 
 ## Validacao apos subir
 
