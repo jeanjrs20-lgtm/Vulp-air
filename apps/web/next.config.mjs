@@ -1,8 +1,21 @@
 /** @type {import('next').NextConfig} */
 const localApiOrigin = "http://localhost:3001";
+const normalizeOrigin = (value) => {
+  const normalized = value?.trim().replace(/\/+$/, "");
+  if (!normalized) {
+    return undefined;
+  }
+
+  if (/^https?:\/\//.test(normalized)) {
+    return normalized;
+  }
+
+  return `http://${normalized}`;
+};
+
 const apiProxyTarget =
-  process.env.API_PROXY_TARGET?.replace(/\/+$/, "") ||
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/v1\/?$/, "") ||
+  normalizeOrigin(process.env.API_PROXY_TARGET) ||
+  normalizeOrigin(process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/v1\/?$/, "")) ||
   (process.env.NODE_ENV === "development" ? localApiOrigin : undefined);
 
 const nextConfig = {

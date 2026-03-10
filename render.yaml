@@ -1,31 +1,69 @@
-services:
-  - type: web
-    name: vulp-air-api
-    runtime: docker
-    dockerfilePath: ./apps/api/Dockerfile
-    dockerContext: .
-    healthCheckPath: /api/v1/health
-    autoDeploy: true
-    disk:
-      name: vulp-air-storage
-      mountPath: /app/storage
-      sizeGB: 10
-    envVars:
-      - key: DATABASE_URL
-        sync: false
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: 10000
-      - key: JWT_SECRET
-        generateValue: true
-      - key: RUN_DATABASE_MIGRATIONS
-        value: "true"
-      - key: RUN_DATABASE_SEED
-        value: "false"
-      - key: STORAGE_DRIVER
-        value: local
-      - key: STORAGE_LOCAL_PATH
-        value: ../../storage
-      - key: PUBLIC_WEB_URL
-        sync: false
+previews:
+  generation: off
+
+projects:
+  - name: vulp-air
+    environments:
+      - name: production
+        services:
+          - type: web
+            name: vulp-air-web
+            runtime: node
+            region: virginia
+            buildCommand: pnpm install --frozen-lockfile && pnpm turbo run build --filter=@vulp/web
+            startCommand: cd apps/web && pnpm exec next start -H 0.0.0.0 -p $PORT
+            healthCheckPath: /login
+            autoDeploy: true
+            envVars:
+              - key: PORT
+                value: 10000
+              - key: NODE_VERSION
+                value: 20.18.0
+              - key: NEXT_TELEMETRY_DISABLED
+                value: "1"
+              - key: API_PROXY_TARGET
+                fromService:
+                  type: web
+                  name: vulp-air-api
+                  property: hostport
+
+          - type: web
+            name: vulp-air-api
+            runtime: docker
+            region: virginia
+            dockerfilePath: ./apps/api/Dockerfile
+            dockerContext: .
+            healthCheckPath: /api/v1/health
+            autoDeploy: true
+            disk:
+              name: vulp-air-storage
+              mountPath: /app/storage
+              sizeGB: 10
+            envVars:
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: vulp-air-db
+                  property: connectionString
+              - key: NODE_ENV
+                value: production
+              - key: PORT
+                value: 10000
+              - key: JWT_SECRET
+                generateValue: true
+              - key: RUN_DATABASE_MIGRATIONS
+                value: "true"
+              - key: RUN_DATABASE_SEED
+                value: "true"
+              - key: STORAGE_DRIVER
+                value: local
+              - key: STORAGE_LOCAL_PATH
+                value: ../../storage
+              - key: PUBLIC_WEB_URL
+                value: https://vulp-air-web.onrender.com
+
+        databases:
+          - name: vulp-air-db
+            region: virginia
+            databaseName: vulp_air
+            user: vulp_air
+            postgresMajorVersion: "16"
