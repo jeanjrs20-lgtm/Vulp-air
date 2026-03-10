@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: vulp-air-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    disk:
+      name: vulp-air-storage
+      mountPath: /app/storage
+      sizeGB: 10
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: RUN_DATABASE_MIGRATIONS
+        value: "true"
+      - key: STORAGE_DRIVER
+        value: local
+      - key: STORAGE_LOCAL_PATH
+        value: ../../storage
+      - key: PUBLIC_WEB_URL
+        sync: false

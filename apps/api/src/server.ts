@@ -1,15 +1,12 @@
-import path from "node:path";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
-import fastifyStatic from "@fastify/static";
 import { env } from "./env.js";
 import prismaPlugin from "./plugins/prisma.js";
 import authPlugin from "./plugins/auth.js";
 import { sendError } from "./lib/envelope.js";
 import { AppError } from "./lib/app-error.js";
 import { apiRoutes } from "./modules/index.js";
-import { getStorageAbsolutePath } from "./lib/storage.js";
 
 export const buildServer = () => {
   const server = Fastify({
@@ -25,11 +22,6 @@ export const buildServer = () => {
     limits: {
       fileSize: 25 * 1024 * 1024
     }
-  });
-
-  server.register(fastifyStatic, {
-    root: path.resolve(getStorageAbsolutePath()),
-    prefix: "/api/v1/media/file/"
   });
 
   server.register(prismaPlugin);

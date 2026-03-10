@@ -1,11 +1,9 @@
-import path from "node:path";
-import { readFile } from "node:fs/promises";
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { AppError } from "../../lib/app-error.js";
 import { requireAuth } from "../../lib/authz.js";
 import { sendSuccess } from "../../lib/envelope.js";
-import { getStorageAbsolutePath, saveLocalFile, toPublicAssetUrl } from "../../lib/storage.js";
+import { readStoredFileBuffer, saveLocalFile, toPublicAssetUrl } from "../../lib/storage.js";
 
 const ListQuerySchema = z.object({
   type: z.enum(["PHOTO", "PDF", "THUMBNAIL", "SIGNATURE", "OTHER"]).optional(),
@@ -33,7 +31,7 @@ export const mediaRoutes: FastifyPluginAsync = async (fastify) => {
 
     const file = await request.file();
     if (!file) {
-      throw new AppError(400, "FILE_REQUIRED", "Arquivo não enviado");
+      throw new AppError(400, "FILE_REQUIRED", "Arquivo nao enviado");
     }
 
     const buffer = await file.toBuffer();
@@ -57,7 +55,8 @@ export const mediaRoutes: FastifyPluginAsync = async (fastify) => {
     const saved = await saveLocalFile({
       folder,
       originalName: file.filename,
-      buffer
+      buffer,
+      contentType: file.mimetype
     });
 
     const asset = await fastify.prisma.mediaAsset.create({
@@ -147,19 +146,37 @@ export const mediaRoutes: FastifyPluginAsync = async (fastify) => {
     );
   });
 
-  fastify.get<{ Params: { storageKey: string } }>("/raw/:storageKey", async (request, reply) => {
-    await requireAuth(request, reply);
-
-    const storageKey = decodeURIComponent(request.params.storageKey);
-    const fullPath = path.resolve(getStorageAbsolutePath(), storageKey);
-
-    if (!fullPath.startsWith(getStorageAbsolutePath())) {
-      throw new AppError(400, "INVALID_PATH", "Path inválido");
+  fastify.get<{ Params: { "*": string } }>("/file/*", async (request, reply) => {
+    const storageKey = decodeURIComponent(request.params["*"] ?? "");
+    if (!storageKey) {
+      throw new AppError(400, "INVALID_PATH", "Path invalido");
     }
 
-    const file = await readFile(fullPath);
+    const asset = await fastify.prisma.mediaAsset.findFirst({
+      where: { storageKey }
+    });
+
+    if (!asset) {
+      throw new AppError(404, "MEDIA_NOT_FOUND", "Arquivo nao encontrado");
+    }
+
+    const file = await readStoredFileBuffer(storageKey);
+    reply.header("content-type", asset.mimeType || "application/octet-stream");
+    reply.header("content-length", String(file.byteLength));
+    reply.header("cache-control", "public, max-age=31536000, immutable");
+    return reply.send(file);
+  });
+
+  fastify.get<{ Params: { "*": string } }>("/raw/*", async (request, reply) => {
+    await requireAuth(request, reply);
+
+    const storageKey = decodeURIComponent(request.params["*"] ?? "");
+    if (!storageKey) {
+      throw new AppError(400, "INVALID_PATH", "Path invalido");
+    }
+
+    const file = await readStoredFileBuffer(storageKey);
     reply.header("content-type", "application/octet-stream");
     return reply.send(file);
   });
 };
-

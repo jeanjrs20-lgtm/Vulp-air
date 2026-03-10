@@ -70,7 +70,8 @@ const createPopFromPdfBuffer = async (params: {
   const savedPdf = await saveLocalFile({
     folder: "pops",
     originalName: params.fileName,
-    buffer: params.buffer
+    buffer: params.buffer,
+    contentType: "application/pdf"
   });
 
   const pdfAsset = await params.prisma.mediaAsset.create({
@@ -104,7 +105,8 @@ const createPopFromPdfBuffer = async (params: {
     const savedThumb = await saveLocalFile({
       folder: "pops/thumbs",
       originalName: `${toSlug(params.title)}-thumb.png`,
-      buffer: extracted.thumbnail
+      buffer: extracted.thumbnail,
+      contentType: "image/png"
     });
 
     const thumbAsset = await params.prisma.mediaAsset.create({

@@ -138,6 +138,7 @@ pnpm --filter @vulp/mobile lan:url
 - Framework: `Next.js`
 - Variavel recomendada na Vercel: `API_PROXY_TARGET=https://api.seudominio.com`
 - Guia detalhado: [docs/deploy-vercel.md](docs/deploy-vercel.md)
+- Guia da API no Render: [docs/deploy-api-render.md](docs/deploy-api-render.md)
 
 Observacao:
 

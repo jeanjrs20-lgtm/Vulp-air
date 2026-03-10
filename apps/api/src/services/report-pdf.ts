@@ -3,7 +3,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 import { renderChecklistReportHtml } from "@vulp/pdf-templates";
 import type { PrismaClient } from "@prisma/client";
-import { getStorageAbsolutePath, saveLocalFile } from "../lib/storage.js";
+import { readStoredFileBuffer, saveLocalFile } from "../lib/storage.js";
 import { AppError } from "../lib/app-error.js";
 
 type ExecutionForPdf = any;
@@ -68,8 +68,8 @@ export const generateChecklistPdfAsset = async ({
 
   let logoUrl: string | null = null;
   if (settings?.logoAsset?.storageKey) {
-    const fullPath = path.resolve(getStorageAbsolutePath(), settings.logoAsset.storageKey);
-    logoUrl = await toDataUri(fullPath, settings.logoAsset.mimeType);
+    const buffer = await readStoredFileBuffer(settings.logoAsset.storageKey);
+    logoUrl = `data:${settings.logoAsset.mimeType};base64,${buffer.toString("base64")}`;
   }
 
   let brandLockupImageUrl: string | null = null;
@@ -97,8 +97,8 @@ export const generateChecklistPdfAsset = async ({
       .filter((asset: any) => asset.type === "PHOTO")
       .slice(0, 12)
       .map(async (asset: any) => {
-        const fullPath = path.resolve(getStorageAbsolutePath(), asset.storageKey);
-        return toDataUri(fullPath, asset.mimeType);
+        const buffer = await readStoredFileBuffer(asset.storageKey);
+        return `data:${asset.mimeType};base64,${buffer.toString("base64")}`;
       })
   );
 
@@ -148,7 +148,8 @@ export const generateChecklistPdfAsset = async ({
   const saved = await saveLocalFile({
     folder: "reports",
     originalName: `${execution.code}.pdf`,
-    buffer: pdfBuffer
+    buffer: pdfBuffer,
+    contentType: "application/pdf"
   });
 
   const mediaAsset = await prisma.mediaAsset.create({

@@ -1,0 +1,16 @@
+.git
+.github
+node_modules
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+exports
+logs
+demo/runtime
+demo/runtime-offline
+demo/offline-cache
+storage
+.env
+**/.env
+**/.env.local
