@@ -1,0 +1,1247 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleCode {
+  SUPERADMIN
+  ADMIN
+  SUPERVISOR
+  TECNICO
+  LEITOR
+}
+
+enum ServiceType {
+  INSTALACAO
+  PREVENTIVA
+  CORRETIVA
+  PMOC
+  VISTORIA
+}
+
+enum ItemType {
+  OK_NOK
+  TEXT
+  NUMBER
+  MULTIPLE_CHOICE
+  PHOTO_REQUIRED
+  SIGNATURE
+}
+
+enum ChecklistExecutionStatus {
+  DRAFT
+  IN_PROGRESS
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  REOPENED
+}
+
+enum MediaType {
+  PHOTO
+  PDF
+  THUMBNAIL
+  SIGNATURE
+  OTHER
+}
+
+enum PopStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum ServiceOrderStatus {
+  OPEN
+  SCHEDULED
+  DISPATCHED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum ServiceOrderPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ServiceOrderLocationType {
+  CHECK_IN
+  CHECK_OUT
+  PING
+}
+
+enum TeamGpsStatus {
+  HIGH_ACCURACY
+  LOW_ACCURACY
+  OFF
+  UNAVAILABLE
+  MOCKED
+}
+
+enum TeamInternetStatus {
+  ONLINE
+  OFFLINE
+  LIMITED
+  UNAVAILABLE
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum InventoryMovementType {
+  INBOUND
+  OUTBOUND
+  ADJUSTMENT
+  RESERVED
+  CONSUMED
+}
+
+enum ExpenseType {
+  FUEL
+  TOLL
+  PARKING
+  MEAL
+  LODGING
+  OTHER
+}
+
+enum ExpenseStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum RoutePlanStatus {
+  PLANNED
+  OPTIMIZED
+  PUBLISHED
+  EXECUTED
+}
+
+enum RouteStopStatus {
+  PLANNED
+  STARTED
+  COMPLETED
+  SKIPPED
+}
+
+enum SatisfactionChannel {
+  APP
+  WHATSAPP
+  EMAIL
+  PHONE
+}
+
+enum DeskTicketStatus {
+  OPEN
+  TRIAGE
+  IN_PROGRESS
+  ON_HOLD
+  RESOLVED
+  CLOSED
+  CANCELLED
+}
+
+enum DeskTicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum DeskTicketChannel {
+  PORTAL
+  PHONE
+  EMAIL
+  WHATSAPP
+  INTERNAL
+}
+
+enum FinancialInvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELED
+}
+
+enum FinancialChargeStatus {
+  SCHEDULED
+  SENT
+  VIEWED
+  PROMISED
+  PAID
+  CANCELED
+}
+
+enum FinancialChargeChannel {
+  EMAIL
+  WHATSAPP
+  SMS
+  PHONE
+  PORTAL
+  MANUAL
+}
+
+enum FinancialPaymentMethod {
+  PIX
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_SLIP
+  CASH
+  TRANSFER
+  OTHER
+}
+
+enum ChatThreadStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum ChatThreadChannel {
+  INTERNAL
+  WHATSAPP
+  PORTAL
+  EMAIL
+  PHONE
+}
+
+enum ChatSenderType {
+  USER
+  CUSTOMER
+  SYSTEM
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CLOSED
+  CANCELLED
+}
+
+enum ProjectPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ProjectTaskStatus {
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  REVIEW
+  DONE
+  CANCELLED
+}
+
+enum ProjectTaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum CrmLeadStatus {
+  NEW
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  ON_HOLD
+  WON
+  LOST
+}
+
+enum CrmLeadPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum CrmActivityType {
+  CALL
+  EMAIL
+  MEETING
+  WHATSAPP
+  NOTE
+  TASK
+}
+
+model User {
+  id                          String                 @id @default(cuid())
+  name                        String
+  email                       String                 @unique
+  passwordHash                String
+  role                        RoleCode               @default(TECNICO)
+  team                        String?
+  regional                    String?
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+  memberships                 Membership[]
+  checklistExecutionsAssigned ChecklistExecution[]   @relation("AssignedTechnician")
+  checklistExecutionsReviewed ChecklistExecution[]   @relation("ReviewedBy")
+  popReadReceipts             PopReadReceipt[]
+  mediaAssets                 MediaAsset[]           @relation("MediaAuthor")
+  auditLogs                   AuditLog[]             @relation("AuditActor")
+  popDocumentsCreated         PopDocument[]
+  reviewComments              ReviewComment[]
+  serviceOrdersAssigned       ServiceOrder[]         @relation("ServiceOrderAssigned")
+  serviceOrdersCreated        ServiceOrder[]         @relation("ServiceOrderCreated")
+  serviceOrderEvents          ServiceOrderEvent[]    @relation("ServiceOrderEventActor")
+  quotesCreated               Quote[]                @relation("QuoteCreatedBy")
+  inventoryMovementsCreated   InventoryMovement[]    @relation("InventoryMovementCreatedBy")
+  expensesSubmitted           ExpenseEntry[]         @relation("ExpenseSubmittedBy")
+  expensesApproved            ExpenseEntry[]         @relation("ExpenseApprovedBy")
+  routePlansCreated           RoutePlan[]            @relation("RoutePlanCreatedBy")
+  routePlansAssigned          RoutePlan[]            @relation("RoutePlanAssignedTechnician")
+  teamLocationPings           TeamLocationPing[]     @relation("TeamLocationPingTechnician")
+  deskTicketsCreated          DeskTicket[]           @relation("DeskTicketCreatedBy")
+  deskTicketsAssigned         DeskTicket[]           @relation("DeskTicketAssignedTechnician")
+  deskTicketEvents            DeskTicketEvent[]      @relation("DeskTicketEventActor")
+  portalAccessesCreated       CustomerPortalAccess[] @relation("CustomerPortalAccessCreatedBy")
+  financialInvoicesCreated    FinancialInvoice[]     @relation("FinancialInvoiceCreatedBy")
+  financialPaymentsReceived   FinancialPayment[]     @relation("FinancialPaymentReceivedBy")
+  financialChargesCreated     FinancialCharge[]      @relation("FinancialChargeCreatedBy")
+  chatThreadsCreated          ChatThread[]           @relation("ChatThreadCreatedBy")
+  chatThreadsAssigned         ChatThread[]           @relation("ChatThreadAssignedTo")
+  chatMessagesSent            ChatMessage[]          @relation("ChatMessageSenderUser")
+  projectsOwned               Project[]              @relation("ProjectOwner")
+  projectMemberships          ProjectMember[]
+  projectTasksAssigned        ProjectTask[]          @relation("ProjectTaskAssigned")
+  projectTasksCreated         ProjectTask[]          @relation("ProjectTaskCreated")
+  crmLeadsOwned               CrmLead[]              @relation("CrmLeadOwner")
+  crmLeadActivities           CrmLeadActivity[]      @relation("CrmLeadActivityActor")
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  code        RoleCode         @unique
+  name        String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  permissions RolePermission[]
+  memberships Membership[]
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  action      String           @unique
+  description String?
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String?
+  team      String?
+  regional  String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role?    @relation(fields: [roleId], references: [id])
+}
+
+model Customer {
+  id                String                 @id @default(cuid())
+  name              String
+  legalName         String?
+  document          String?
+  email             String?
+  phone             String?
+  status            String                 @default("ACTIVE")
+  customerGroup     String?
+  segment           String?
+  contactName       String?
+  billingEmail      String?
+  notes             String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  sites             SiteLocation[]
+  executions        ChecklistExecution[]
+  serviceOrders     ServiceOrder[]
+  quotes            Quote[]
+  feedbacks         CustomerFeedback[]
+  deskTickets       DeskTicket[]
+  portalAccesses    CustomerPortalAccess[]
+  financialInvoices FinancialInvoice[]
+  chatThreads       ChatThread[]
+  chatMessages      ChatMessage[]          @relation("ChatMessageSenderCustomer")
+  projects          Project[]
+  crmLeads          CrmLead[]
+}
+
+model SiteLocation {
+  id                   String               @id @default(cuid())
+  customerId           String
+  name                 String
+  address              String
+  city                 String?
+  state                String?
+  latitude             Float?
+  longitude            Float?
+  geofenceRadiusMeters Float?               @default(200)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  customer             Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  equipments           Equipment[]
+  executions           ChecklistExecution[]
+  serviceOrders        ServiceOrder[]
+  deskTickets          DeskTicket[]
+}
+
+model Equipment {
+  id             String               @id @default(cuid())
+  siteLocationId String
+  brand          String?
+  model          String?
+  serial         String?
+  btu            Int?
+  equipmentType  String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  siteLocation   SiteLocation         @relation(fields: [siteLocationId], references: [id], onDelete: Cascade)
+  executions     ChecklistExecution[]
+  serviceOrders  ServiceOrder[]
+}
+
+model ChecklistTemplate {
+  id          String                     @id @default(cuid())
+  name        String
+  description String?
+  serviceType ServiceType
+  createdById String?
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+  versions    ChecklistTemplateVersion[]
+}
+
+model ChecklistTemplateVersion {
+  id         String               @id @default(cuid())
+  templateId String
+  version    Int
+  isActive   Boolean              @default(true)
+  createdAt  DateTime             @default(now())
+  template   ChecklistTemplate    @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  sections   ChecklistSection[]
+  executions ChecklistExecution[]
+
+  @@unique([templateId, version])
+}
+
+model ChecklistSection {
+  id                String                   @id @default(cuid())
+  templateVersionId String
+  title             String
+  order             Int
+  templateVersion   ChecklistTemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Cascade)
+  items             ChecklistItem[]
+}
+
+model ChecklistItem {
+  id        String            @id @default(cuid())
+  sectionId String
+  label     String
+  itemType  ItemType
+  unit      String?
+  options   Json?
+  required  Boolean           @default(false)
+  order     Int
+  section   ChecklistSection  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  answers   ChecklistAnswer[]
+  comments  ReviewComment[]
+}
+
+model ChecklistExecution {
+  id                        String                   @id @default(cuid())
+  code                      String                   @unique
+  templateVersionId         String
+  assignedTechnicianId      String
+  customerId                String?
+  siteLocationId            String?
+  equipmentId               String?
+  status                    ChecklistExecutionStatus @default(DRAFT)
+  step                      Int                      @default(1)
+  serviceDate               DateTime?
+  startedAt                 DateTime?
+  submittedAt               DateTime?
+  reviewedAt                DateTime?
+  approvedAt                DateTime?
+  reviewedById              String?
+  technicianSignature       String?
+  localResponsibleSignature String?
+  supervisorSignature       String?
+  notes                     String?
+  pdfAssetId                String?                  @unique
+  createdAt                 DateTime                 @default(now())
+  updatedAt                 DateTime                 @updatedAt
+  templateVersion           ChecklistTemplateVersion @relation(fields: [templateVersionId], references: [id])
+  assignedTechnician        User                     @relation("AssignedTechnician", fields: [assignedTechnicianId], references: [id])
+  customer                  Customer?                @relation(fields: [customerId], references: [id])
+  siteLocation              SiteLocation?            @relation(fields: [siteLocationId], references: [id])
+  equipment                 Equipment?               @relation(fields: [equipmentId], references: [id])
+  reviewedBy                User?                    @relation("ReviewedBy", fields: [reviewedById], references: [id])
+  pdfAsset                  MediaAsset?              @relation("ChecklistPdfAsset", fields: [pdfAssetId], references: [id])
+  answers                   ChecklistAnswer[]
+  reviewComments            ReviewComment[]
+  mediaAssets               MediaAsset[]             @relation("ExecutionMedia")
+  auditLogs                 AuditLog[]
+  serviceOrder              ServiceOrder?            @relation("ServiceOrderChecklist")
+}
+
+model ServiceOrder {
+  id                   String                      @id @default(cuid())
+  code                 String                      @unique
+  title                String
+  description          String?
+  status               ServiceOrderStatus          @default(OPEN)
+  priority             ServiceOrderPriority        @default(MEDIUM)
+  serviceDate          DateTime?
+  scheduledStartAt     DateTime?
+  scheduledEndAt       DateTime?
+  dispatchedAt         DateTime?
+  startedAt            DateTime?
+  completedAt          DateTime?
+  cancelledAt          DateTime?
+  slaDueAt             DateTime?
+  customerId           String?
+  siteLocationId       String?
+  equipmentId          String?
+  assignedTechnicianId String?
+  createdById          String?
+  checklistExecutionId String?                     @unique
+  createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @updatedAt
+  customer             Customer?                   @relation(fields: [customerId], references: [id])
+  siteLocation         SiteLocation?               @relation(fields: [siteLocationId], references: [id])
+  equipment            Equipment?                  @relation(fields: [equipmentId], references: [id])
+  assignedTechnician   User?                       @relation("ServiceOrderAssigned", fields: [assignedTechnicianId], references: [id])
+  createdBy            User?                       @relation("ServiceOrderCreated", fields: [createdById], references: [id])
+  checklistExecution   ChecklistExecution?         @relation("ServiceOrderChecklist", fields: [checklistExecutionId], references: [id])
+  events               ServiceOrderEvent[]
+  locations            ServiceOrderLocationPoint[]
+  materials            ServiceOrderMaterial[]
+  quotes               Quote[]
+  expenses             ExpenseEntry[]
+  feedback             CustomerFeedback?
+  routeStops           RoutePlanStop[]
+  teamLocationPings    TeamLocationPing[]
+  deskTickets          DeskTicket[]
+  financialInvoices    FinancialInvoice[]
+  chatThreads          ChatThread[]
+  projectTasks         ProjectTask[]                @relation("ProjectTaskServiceOrder")
+}
+
+model ServiceOrderEvent {
+  id             String       @id @default(cuid())
+  serviceOrderId String
+  actorId        String?
+  type           String
+  note           String?
+  payload        Json?
+  createdAt      DateTime     @default(now())
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  actor          User?        @relation("ServiceOrderEventActor", fields: [actorId], references: [id])
+
+  @@index([serviceOrderId, createdAt])
+}
+
+model ServiceOrderLocationPoint {
+  id             String                   @id @default(cuid())
+  serviceOrderId String
+  type           ServiceOrderLocationType
+  latitude       Float
+  longitude      Float
+  accuracy       Float?
+  speed          Float?
+  heading        Float?
+  source         String?
+  note           String?
+  capturedAt     DateTime                 @default(now())
+  createdAt      DateTime                 @default(now())
+  serviceOrder   ServiceOrder             @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+
+  @@index([serviceOrderId, capturedAt])
+}
+
+model TeamLocationPing {
+  id             String        @id @default(cuid())
+  technicianId   String
+  serviceOrderId String?
+  latitude       Float
+  longitude      Float
+  accuracy       Float?
+  speed          Float?
+  heading        Float?
+  source         String?
+  gpsStatus      TeamGpsStatus?
+  internetStatus TeamInternetStatus?
+  batteryLevel   Int?
+  isCharging     Boolean?
+  appVersion     String?
+  osVersion      String?
+  deviceModel    String?
+  deviceId       String?
+  isMockLocation Boolean?
+  integrityFlags String[]      @default([])
+  capturedAt     DateTime      @default(now())
+  createdAt      DateTime      @default(now())
+  technician     User          @relation("TeamLocationPingTechnician", fields: [technicianId], references: [id])
+  serviceOrder   ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+
+  @@index([technicianId, capturedAt])
+  @@index([serviceOrderId, capturedAt])
+}
+
+model Quote {
+  id                String             @id @default(cuid())
+  code              String             @unique
+  serviceOrderId    String?
+  customerId        String?
+  createdById       String?
+  status            QuoteStatus        @default(DRAFT)
+  validUntil        DateTime?
+  notes             String?
+  subtotal          Float              @default(0)
+  discount          Float              @default(0)
+  total             Float              @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  serviceOrder      ServiceOrder?      @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  customer          Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy         User?              @relation("QuoteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  items             QuoteItem[]
+  deskTickets       DeskTicket[]
+  financialInvoices FinancialInvoice[]
+  chatThreads       ChatThread[]
+  crmLeads          CrmLead[]         @relation("CrmLeadQuote")
+
+  @@index([serviceOrderId, customerId, status])
+}
+
+model DeskTicket {
+  id                   String             @id @default(cuid())
+  code                 String             @unique
+  title                String
+  description          String?
+  status               DeskTicketStatus   @default(OPEN)
+  priority             DeskTicketPriority @default(MEDIUM)
+  channel              DeskTicketChannel  @default(PORTAL)
+  customerId           String
+  siteLocationId       String?
+  serviceOrderId       String?
+  quoteId              String?
+  createdById          String?
+  assignedTechnicianId String?
+  openedAt             DateTime           @default(now())
+  firstResponseAt      DateTime?
+  dueAt                DateTime?
+  resolvedAt           DateTime?
+  closedAt             DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  customer             Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  siteLocation         SiteLocation?      @relation(fields: [siteLocationId], references: [id], onDelete: SetNull)
+  serviceOrder         ServiceOrder?      @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  quote                Quote?             @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  createdBy            User?              @relation("DeskTicketCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  assignedTechnician   User?              @relation("DeskTicketAssignedTechnician", fields: [assignedTechnicianId], references: [id], onDelete: SetNull)
+  events               DeskTicketEvent[]
+  financialInvoices    FinancialInvoice[]
+  chatThreads          ChatThread[]
+  projectTasks         ProjectTask[]      @relation("ProjectTaskDeskTicket")
+  crmLeads             CrmLead[]          @relation("CrmLeadDeskTicket")
+
+  @@index([customerId, status, priority])
+  @@index([assignedTechnicianId, status])
+  @@index([serviceOrderId])
+  @@index([quoteId])
+}
+
+model DeskTicketEvent {
+  id           String     @id @default(cuid())
+  deskTicketId String
+  actorId      String?
+  type         String
+  note         String?
+  payload      Json?
+  createdAt    DateTime   @default(now())
+  deskTicket   DeskTicket @relation(fields: [deskTicketId], references: [id], onDelete: Cascade)
+  actor        User?      @relation("DeskTicketEventActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([deskTicketId, createdAt])
+}
+
+model CustomerPortalAccess {
+  id          String    @id @default(cuid())
+  customerId  String
+  tokenHash   String    @unique
+  label       String?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  lastUsedAt  DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdBy   User?     @relation("CustomerPortalAccessCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([customerId, createdAt])
+}
+
+model FinancialInvoice {
+  id             String                 @id @default(cuid())
+  code           String                 @unique
+  customerId     String
+  serviceOrderId String?
+  quoteId        String?
+  deskTicketId   String?
+  description    String?
+  status         FinancialInvoiceStatus @default(DRAFT)
+  currency       String                 @default("BRL")
+  issueDate      DateTime?
+  dueDate        DateTime
+  subtotal       Float                  @default(0)
+  discount       Float                  @default(0)
+  penalties      Float                  @default(0)
+  totalAmount    Float                  @default(0)
+  paidAmount     Float                  @default(0)
+  balanceAmount  Float                  @default(0)
+  issuedAt       DateTime?
+  paidAt         DateTime?
+  cancelledAt    DateTime?
+  createdById    String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  customer       Customer               @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  serviceOrder   ServiceOrder?          @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  quote          Quote?                 @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  deskTicket     DeskTicket?            @relation(fields: [deskTicketId], references: [id], onDelete: SetNull)
+  createdBy      User?                  @relation("FinancialInvoiceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  items          FinancialInvoiceItem[]
+  payments       FinancialPayment[]
+  charges        FinancialCharge[]
+
+  @@index([customerId, status, dueDate])
+  @@index([serviceOrderId])
+  @@index([quoteId])
+  @@index([deskTicketId])
+}
+
+model FinancialInvoiceItem {
+  id          String           @id @default(cuid())
+  invoiceId   String
+  description String
+  quantity    Float            @default(1)
+  unitPrice   Float
+  total       Float
+  createdAt   DateTime         @default(now())
+  invoice     FinancialInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model FinancialPayment {
+  id           String                 @id @default(cuid())
+  invoiceId    String
+  method       FinancialPaymentMethod
+  amount       Float
+  paidAt       DateTime               @default(now())
+  reference    String?
+  note         String?
+  receivedById String?
+  createdAt    DateTime               @default(now())
+  invoice      FinancialInvoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  receivedBy   User?                  @relation("FinancialPaymentReceivedBy", fields: [receivedById], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId, paidAt])
+}
+
+model FinancialCharge {
+  id          String                 @id @default(cuid())
+  invoiceId   String
+  channel     FinancialChargeChannel
+  status      FinancialChargeStatus  @default(SCHEDULED)
+  scheduledTo DateTime?
+  sentAt      DateTime?
+  viewedAt    DateTime?
+  resolvedAt  DateTime?
+  externalRef String?
+  note        String?
+  createdById String?
+  createdAt   DateTime               @default(now())
+  invoice     FinancialInvoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  createdBy   User?                  @relation("FinancialChargeCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId, createdAt])
+}
+
+model ChatThread {
+  id             String            @id @default(cuid())
+  code           String            @unique
+  subject        String
+  status         ChatThreadStatus  @default(OPEN)
+  channel        ChatThreadChannel @default(INTERNAL)
+  customerId     String?
+  deskTicketId   String?
+  serviceOrderId String?
+  quoteId        String?
+  createdById    String?
+  assignedToId   String?
+  lastMessageAt  DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  customer       Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  deskTicket     DeskTicket?       @relation(fields: [deskTicketId], references: [id], onDelete: SetNull)
+  serviceOrder   ServiceOrder?     @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  quote          Quote?            @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  createdBy      User?             @relation("ChatThreadCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  assignedTo     User?             @relation("ChatThreadAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  messages       ChatMessage[]
+
+  @@index([status, lastMessageAt])
+  @@index([customerId, status])
+  @@index([deskTicketId])
+  @@index([serviceOrderId])
+  @@index([quoteId])
+}
+
+model ChatMessage {
+  id               String         @id @default(cuid())
+  threadId         String
+  senderType       ChatSenderType
+  senderUserId     String?
+  senderCustomerId String?
+  senderName       String?
+  message          String
+  metadata         Json?
+  createdAt        DateTime       @default(now())
+  thread           ChatThread     @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderUser       User?          @relation("ChatMessageSenderUser", fields: [senderUserId], references: [id], onDelete: SetNull)
+  senderCustomer   Customer?      @relation("ChatMessageSenderCustomer", fields: [senderCustomerId], references: [id], onDelete: SetNull)
+
+  @@index([threadId, createdAt])
+}
+
+model Project {
+  id           String          @id @default(cuid())
+  code         String          @unique
+  name         String
+  description  String?
+  status       ProjectStatus   @default(ACTIVE)
+  priority     ProjectPriority @default(MEDIUM)
+  customerId   String?
+  ownerId      String?
+  startDate    DateTime?
+  dueDate      DateTime?
+  closedAt     DateTime?
+  budgetAmount Float?          @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  customer     Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  owner        User?           @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  members      ProjectMember[]
+  tasks        ProjectTask[]
+  crmLeads     CrmLead[]
+
+  @@index([status, dueDate])
+  @@index([customerId])
+  @@index([ownerId])
+}
+
+model ProjectMember {
+  projectId  String
+  userId     String
+  role       String   @default("MEMBER")
+  isWatcher  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@index([userId])
+}
+
+model ProjectTask {
+  id                  String              @id @default(cuid())
+  projectId           String
+  title               String
+  description         String?
+  status              ProjectTaskStatus   @default(TODO)
+  priority            ProjectTaskPriority @default(MEDIUM)
+  assignedToId        String?
+  createdById         String?
+  linkedServiceOrderId String?
+  linkedDeskTicketId   String?
+  dueDate             DateTime?
+  estimatedHours      Float?
+  loggedHours         Float               @default(0)
+  startedAt           DateTime?
+  completedAt         DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  project             Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedTo          User?               @relation("ProjectTaskAssigned", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy           User?               @relation("ProjectTaskCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  linkedServiceOrder  ServiceOrder?       @relation("ProjectTaskServiceOrder", fields: [linkedServiceOrderId], references: [id], onDelete: SetNull)
+  linkedDeskTicket    DeskTicket?         @relation("ProjectTaskDeskTicket", fields: [linkedDeskTicketId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, status, priority])
+  @@index([assignedToId, status])
+  @@index([linkedServiceOrderId])
+  @@index([linkedDeskTicketId])
+}
+
+model CrmLead {
+  id                 String          @id @default(cuid())
+  code               String          @unique
+  name               String
+  company            String?
+  email              String?
+  phone              String?
+  source             String?
+  status             CrmLeadStatus   @default(NEW)
+  priority           CrmLeadPriority @default(MEDIUM)
+  estimatedValue     Float?          @default(0)
+  expectedCloseAt    DateTime?
+  ownerId            String?
+  customerId         String?
+  projectId          String?
+  linkedQuoteId      String?
+  linkedDeskTicketId String?
+  notes              String?
+  lostReason         String?
+  wonAt              DateTime?
+  lostAt             DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  owner              User?           @relation("CrmLeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  customer           Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  project            Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  linkedQuote        Quote?          @relation("CrmLeadQuote", fields: [linkedQuoteId], references: [id], onDelete: SetNull)
+  linkedDeskTicket   DeskTicket?     @relation("CrmLeadDeskTicket", fields: [linkedDeskTicketId], references: [id], onDelete: SetNull)
+  activities         CrmLeadActivity[]
+
+  @@index([status, ownerId, expectedCloseAt])
+  @@index([customerId])
+  @@index([projectId])
+  @@index([linkedQuoteId])
+  @@index([linkedDeskTicketId])
+}
+
+model CrmLeadActivity {
+  id        String          @id @default(cuid())
+  leadId    String
+  actorId   String?
+  type      CrmActivityType
+  subject   String?
+  note      String?
+  dueAt     DateTime?
+  doneAt    DateTime?
+  metadata  Json?
+  createdAt DateTime        @default(now())
+  lead      CrmLead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  actor     User?           @relation("CrmLeadActivityActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([leadId, createdAt])
+  @@index([actorId, type])
+}
+
+model QuoteItem {
+  id          String   @id @default(cuid())
+  quoteId     String
+  description String
+  quantity    Float
+  unitPrice   Float
+  total       Float
+  createdAt   DateTime @default(now())
+  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+}
+
+model InventoryProduct {
+  id               String                 @id @default(cuid())
+  sku              String                 @unique
+  name             String
+  description      String?
+  unit             String                 @default("UN")
+  currentStock     Float                  @default(0)
+  minStock         Float                  @default(0)
+  maxStock         Float?
+  costPrice        Float?
+  salePrice        Float?
+  active           Boolean                @default(true)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  movements        InventoryMovement[]
+  serviceMaterials ServiceOrderMaterial[]
+}
+
+model InventoryMovement {
+  id            String                @id @default(cuid())
+  productId     String
+  type          InventoryMovementType
+  quantity      Float
+  unitCost      Float?
+  referenceType String?
+  referenceId   String?
+  notes         String?
+  createdById   String?
+  createdAt     DateTime              @default(now())
+  product       InventoryProduct      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdBy     User?                 @relation("InventoryMovementCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([productId, createdAt])
+}
+
+model ServiceOrderMaterial {
+  id             String           @id @default(cuid())
+  serviceOrderId String
+  productId      String
+  quantity       Float
+  unitCost       Float?
+  totalCost      Float?
+  usedAt         DateTime         @default(now())
+  serviceOrder   ServiceOrder     @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  product        InventoryProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([serviceOrderId, usedAt])
+}
+
+model ExpenseEntry {
+  id             String        @id @default(cuid())
+  serviceOrderId String?
+  technicianId   String
+  type           ExpenseType
+  amount         Float
+  currency       String        @default("BRL")
+  distanceKm     Float?
+  expenseDate    DateTime      @default(now())
+  description    String?
+  receiptAssetId String?
+  status         ExpenseStatus @default(DRAFT)
+  approvedById   String?
+  approvedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  serviceOrder   ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  technician     User          @relation("ExpenseSubmittedBy", fields: [technicianId], references: [id], onDelete: Restrict)
+  approvedBy     User?         @relation("ExpenseApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  receiptAsset   MediaAsset?   @relation("ExpenseReceiptAsset", fields: [receiptAssetId], references: [id], onDelete: SetNull)
+
+  @@index([technicianId, expenseDate])
+  @@index([serviceOrderId, status])
+}
+
+model CustomerFeedback {
+  id             String              @id @default(cuid())
+  serviceOrderId String              @unique
+  customerId     String?
+  scoreNps       Int?
+  scoreCsat      Int?
+  comment        String?
+  channel        SatisfactionChannel @default(APP)
+  submittedAt    DateTime            @default(now())
+  createdAt      DateTime            @default(now())
+  serviceOrder   ServiceOrder        @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  customer       Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([customerId, submittedAt])
+}
+
+model RoutePlan {
+  id                   String          @id @default(cuid())
+  name                 String
+  planDate             DateTime
+  status               RoutePlanStatus @default(PLANNED)
+  createdById          String?
+  assignedTechnicianId String?
+  notes                String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  createdBy            User?           @relation("RoutePlanCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  assignedTechnician   User?           @relation("RoutePlanAssignedTechnician", fields: [assignedTechnicianId], references: [id], onDelete: SetNull)
+  stops                RoutePlanStop[]
+
+  @@index([planDate, status])
+}
+
+model RoutePlanStop {
+  id                    String          @id @default(cuid())
+  routePlanId           String
+  serviceOrderId        String
+  sequence              Int
+  etaStart              DateTime?
+  etaEnd                DateTime?
+  actualStart           DateTime?
+  actualEnd             DateTime?
+  distanceKmFromPrev    Float?
+  travelMinutesFromPrev Int?
+  status                RouteStopStatus @default(PLANNED)
+  notes                 String?
+  routePlan             RoutePlan       @relation(fields: [routePlanId], references: [id], onDelete: Cascade)
+  serviceOrder          ServiceOrder    @relation(fields: [serviceOrderId], references: [id], onDelete: Restrict)
+
+  @@unique([routePlanId, sequence])
+  @@unique([routePlanId, serviceOrderId])
+}
+
+model ChecklistAnswer {
+  id              String             @id @default(cuid())
+  executionId     String
+  checklistItemId String
+  valueJson       Json?
+  textValue       String?
+  numberValue     Float?
+  booleanValue    Boolean?
+  optionValue     String?
+  notes           String?
+  isNonConformity Boolean            @default(false)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  execution       ChecklistExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  checklistItem   ChecklistItem      @relation(fields: [checklistItemId], references: [id])
+  attachments     MediaAsset[]       @relation("AnswerAttachments")
+
+  @@unique([executionId, checklistItemId])
+}
+
+model ReviewComment {
+  id              String             @id @default(cuid())
+  executionId     String
+  checklistItemId String?
+  comment         String
+  createdById     String
+  createdAt       DateTime           @default(now())
+  execution       ChecklistExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  checklistItem   ChecklistItem?     @relation(fields: [checklistItemId], references: [id])
+  createdBy       User               @relation(fields: [createdById], references: [id])
+}
+
+model MediaAsset {
+  id                    String              @id @default(cuid())
+  type                  MediaType
+  title                 String?
+  tags                  String[]            @default([])
+  storageKey            String
+  mimeType              String
+  size                  Int
+  createdById           String?
+  checklistExecutionId  String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  createdBy             User?               @relation("MediaAuthor", fields: [createdById], references: [id])
+  checklistExecution    ChecklistExecution? @relation("ExecutionMedia", fields: [checklistExecutionId], references: [id])
+  checklistPdfExecution ChecklistExecution? @relation("ChecklistPdfAsset")
+  popPdfDocuments       PopDocument[]       @relation("PopPdfAsset")
+  popThumbnailDocuments PopDocument[]       @relation("PopThumbnailAsset")
+  settingsLogo          Settings[]          @relation("SettingsLogoAsset")
+  answerAttachments     ChecklistAnswer[]   @relation("AnswerAttachments")
+  expenseReceipts       ExpenseEntry[]      @relation("ExpenseReceiptAsset")
+}
+
+model PopDocument {
+  id               String           @id @default(cuid())
+  title            String
+  category         String
+  tags             String[]         @default([])
+  version          Int
+  status           PopStatus        @default(DRAFT)
+  pdfAssetId       String
+  thumbnailAssetId String?
+  createdById      String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  pdfAsset         MediaAsset       @relation("PopPdfAsset", fields: [pdfAssetId], references: [id])
+  thumbnailAsset   MediaAsset?      @relation("PopThumbnailAsset", fields: [thumbnailAssetId], references: [id])
+  createdBy        User?            @relation(fields: [createdById], references: [id])
+  chunks           PopChunk[]
+  readReceipts     PopReadReceipt[]
+
+  @@unique([title, version])
+}
+
+model PopChunk {
+  id         String                      @id @default(cuid())
+  popId      String
+  content    String
+  page       Int
+  chunkOrder Int
+  tsv        Unsupported("tsvector")?
+  createdAt  DateTime                    @default(now())
+  pop        PopDocument                 @relation(fields: [popId], references: [id], onDelete: Cascade)
+
+  @@index([popId])
+}
+
+model PopReadReceipt {
+  id             String      @id @default(cuid())
+  userId         String
+  popId          String
+  openedAt       DateTime?
+  acknowledgedAt DateTime?
+  version        Int
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pop            PopDocument @relation(fields: [popId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, popId, version])
+}
+
+model Settings {
+  id             String      @id @default("app")
+  brandingColors Json?
+  logoAssetId    String?
+  pdfFooter      String?
+  useBrandLockup Boolean     @default(true)
+  smtpHost       String?
+  smtpPort       Int?
+  smtpFrom       String?
+  categories     Json?
+  tags           Json?
+  updatedAt      DateTime    @updatedAt
+  logoAsset      MediaAsset? @relation("SettingsLogoAsset", fields: [logoAssetId], references: [id])
+}
+
+model AuditLog {
+  id                   String              @id @default(cuid())
+  actorId              String?
+  entity               String
+  entityId             String
+  action               String
+  payload              Json?
+  checklistExecutionId String?
+  createdAt            DateTime            @default(now())
+  actor                User?               @relation("AuditActor", fields: [actorId], references: [id])
+  checklistExecution   ChecklistExecution? @relation(fields: [checklistExecutionId], references: [id])
+
+  @@index([entity, entityId])
+}

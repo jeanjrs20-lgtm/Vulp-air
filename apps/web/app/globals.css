@@ -1,0 +1,146 @@
+@import "leaflet/dist/leaflet.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-primary: #07384D;
+  --brand-primary-deep: #052A39;
+  --brand-background: #5ADCE8;
+  --brand-background-soft: #DDF8FB;
+  --brand-highlight: #DCEB15;
+  --brand-highlight-soft: #F0F7A8;
+  --brand-text-on-dark: #FFFFFF;
+  --brand-neutral-bg: #EAF4F6;
+  --brand-panel: rgba(255, 255, 255, 0.78);
+  --brand-panel-strong: rgba(255, 255, 255, 0.92);
+  --brand-border: rgba(7, 56, 77, 0.12);
+  --brand-border-strong: rgba(7, 56, 77, 0.22);
+  --brand-shadow-soft: 0 14px 40px rgba(7, 56, 77, 0.08);
+  --brand-shadow-strong: 0 24px 80px rgba(7, 56, 77, 0.14);
+  --radius-base: 18px;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: inherit;
+  position: relative;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(220, 235, 21, 0.24) 0%, rgba(220, 235, 21, 0) 28%),
+    radial-gradient(circle at 100% 14%, rgba(90, 220, 232, 0.34) 0%, rgba(90, 220, 232, 0) 34%),
+    radial-gradient(circle at 50% 100%, rgba(7, 56, 77, 0.08) 0%, rgba(7, 56, 77, 0) 30%),
+    linear-gradient(180deg, #f9feff 0%, #eef7f9 48%, #e0f4f7 100%);
+  color: #052a39;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.45;
+  background-image:
+    linear-gradient(rgba(7, 56, 77, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(7, 56, 77, 0.04) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.3), transparent 80%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: auto -10% -30% auto;
+  width: 34rem;
+  height: 34rem;
+  border-radius: 999px;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(90, 220, 232, 0.18) 0%, rgba(90, 220, 232, 0) 72%);
+  filter: blur(16px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.app-surface {
+  position: relative;
+}
+
+.app-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+}
+
+.card {
+  border: 1px solid var(--brand-border);
+  border-radius: var(--radius-base);
+  background: linear-gradient(180deg, var(--brand-panel-strong) 0%, var(--brand-panel) 100%);
+  box-shadow: var(--brand-shadow-soft);
+  backdrop-filter: blur(18px);
+}
+
+.card-muted {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.66) 0%, rgba(255, 255, 255, 0.54) 100%);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(7, 56, 77, 0.12);
+  background: rgba(255, 255, 255, 0.78);
+  padding: 0.45rem 0.8rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-primary);
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.dashboard-grid-hero {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.72) 100%),
+    linear-gradient(120deg, rgba(220, 235, 21, 0.16) 0%, rgba(90, 220, 232, 0.08) 100%);
+}
+
+.metric-value {
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.soft-divider {
+  border-color: rgba(7, 56, 77, 0.1);
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-popIn {
+  animation: popIn 280ms ease-out;
+}

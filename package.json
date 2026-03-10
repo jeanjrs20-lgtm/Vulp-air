@@ -1,0 +1,25 @@
+{
+  "name": "vulp-air-fieldops",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.6.3",
+  "scripts": {
+    "dev": "turbo run dev --parallel --filter=@vulp/api --filter=@vulp/web",
+    "dev:api": "pnpm --filter @vulp/api dev",
+    "dev:web": "pnpm --filter @vulp/web dev",
+    "dev:mobile": "pnpm --filter @vulp/mobile dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "db:migrate": "pnpm --filter @vulp/api db:migrate",
+    "db:deploy": "pnpm --filter @vulp/api db:deploy",
+    "db:push": "pnpm --filter @vulp/api db:push",
+    "db:seed": "pnpm --filter @vulp/api db:seed",
+    "setup": "pnpm docker:up && pnpm db:migrate && pnpm db:seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.2",
+    "typescript": "^5.6.3"
+  }
+}

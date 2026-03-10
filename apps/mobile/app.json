@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "VULP AIR FieldOps",
+    "slug": "vulp-air-fieldops",
+    "scheme": "vulpairfieldops",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#EAF4F6"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Usamos sua localizacao para registrar check-in e check-out da ordem de servico."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#EAF4F6"
+      },
+      "package": "com.vulpair.fieldops",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Usamos sua localizacao para registrar check-in e check-out da ordem de servico."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiUrlAndroid": "http://10.0.2.2:3001/api/v1",
+      "apiUrlIos": "http://localhost:3001/api/v1"
+    }
+  }
+}

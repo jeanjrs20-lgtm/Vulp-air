@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@vulp/shared": ["packages/shared/src/index.ts"],
+      "@vulp/api-client": ["packages/api-client/src/index.ts"],
+      "@vulp/ui-tokens": ["packages/ui-tokens/src/index.ts"],
+      "@vulp/rbac": ["packages/rbac/src/index.ts"],
+      "@vulp/pdf-templates": ["packages/pdf-templates/src/index.ts"]
+    }
+  }
+}
