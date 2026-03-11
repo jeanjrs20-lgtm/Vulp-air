@@ -1,10 +1,10 @@
 # Deploy full-stack no Render
 
-Este repositorio agora tem um `render.yaml` preparado para subir o ambiente completo no Render, no mesmo projeto:
+Este repositorio agora tem um `render.yaml` preparado para subir o ambiente completo no Render, no mesmo projeto, em modo demo gratuito:
 
-- `vulp-air-web` (`apps/web`)
-- `vulp-air-api` (`apps/api`)
-- `vulp-air-db` (PostgreSQL)
+- `vulp-air-web` (`apps/web`, plano `free`)
+- `vulp-air-api` (`apps/api`, plano `free`)
+- `vulp-air-db` (PostgreSQL, plano `free`)
 
 ## Como publicar
 
@@ -20,10 +20,10 @@ Este repositorio agora tem um `render.yaml` preparado para subir o ambiente comp
 ## Como ficou o fluxo
 
 - O frontend usa `/api/v1` no browser.
-- No Render, o `vulp-air-web` faz proxy interno para o `vulp-air-api` usando a rede privada do projeto.
+- O `vulp-air-web` faz proxy para a URL publica do `vulp-air-api`.
 - O banco e criado pelo proprio Blueprint.
 
-Isso evita depender da Vercel para o fluxo completo.
+Isso evita depender da Vercel para o fluxo completo e remove o uso de recursos pagos do Render.
 
 ## Credenciais demo
 
@@ -67,6 +67,20 @@ Se o Render criar outro hostname ou se voce usar dominio proprio, ajuste essa va
 
 Ela e usada em links do portal do cliente e fluxos que precisam montar URL publica do frontend.
 
+## Limites do modo gratuito
+
+Este Blueprint foi ajustado para nao exigir cartao por causa de recurso pago. O tradeoff e este:
+
+- sem `Persistent Disk`
+- arquivos enviados ficam em storage local temporario do container
+- em restart, redeploy ou reciclarem a instancia, esses arquivos podem ser perdidos
+- os servicos `free` podem entrar em spin down por inatividade
+
+Para demo e homologacao leve, isso atende. Para operacao real, o correto e migrar depois para:
+
+- API com disco persistente ou `s3`
+- banco e web em plano pago
+
 ## Testes apos publicar
 
 1. Health da API:
@@ -84,5 +98,5 @@ https://vulp-air-web.onrender.com/login
 ## Observacoes
 
 - O primeiro build pode demorar mais por causa das dependencias do monorepo.
-- A API usa disco persistente local no Render para arquivos e PDFs.
-- Se depois quiser storage mais robusto, a API ja aceita `s3`.
+- A API usa storage local temporario no plano gratuito.
+- Se depois quiser storage robusto, a API ja aceita `s3`.

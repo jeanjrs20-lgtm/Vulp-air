@@ -10,6 +10,7 @@ projects:
             name: vulp-air-web
             runtime: node
             region: virginia
+            plan: free
             buildCommand: pnpm install --frozen-lockfile && pnpm turbo run build --filter=@vulp/web
             startCommand: cd apps/web && pnpm exec next start -H 0.0.0.0 -p $PORT
             healthCheckPath: /login
@@ -22,23 +23,17 @@ projects:
               - key: NEXT_TELEMETRY_DISABLED
                 value: "1"
               - key: API_PROXY_TARGET
-                fromService:
-                  type: web
-                  name: vulp-air-api
-                  property: hostport
+                value: https://vulp-air-api.onrender.com
 
           - type: web
             name: vulp-air-api
             runtime: docker
             region: virginia
+            plan: free
             dockerfilePath: ./apps/api/Dockerfile
             dockerContext: .
             healthCheckPath: /api/v1/health
             autoDeploy: true
-            disk:
-              name: vulp-air-storage
-              mountPath: /app/storage
-              sizeGB: 10
             envVars:
               - key: DATABASE_URL
                 fromDatabase:
@@ -57,13 +52,14 @@ projects:
               - key: STORAGE_DRIVER
                 value: local
               - key: STORAGE_LOCAL_PATH
-                value: ../../storage
+                value: storage
               - key: PUBLIC_WEB_URL
                 value: https://vulp-air-web.onrender.com
 
         databases:
           - name: vulp-air-db
             region: virginia
+            plan: free
             databaseName: vulp_air
             user: vulp_air
             postgresMajorVersion: "16"
