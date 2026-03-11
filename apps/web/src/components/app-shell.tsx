@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ShieldCheck, Wrench } from "lucide-react";
 import { BrandLockup } from "@/components/brand-lockup";
 import { Button } from "@/components/ui/button";
@@ -152,25 +152,68 @@ function GroupedNav({
   pathname: string;
   groups: NavGroup[];
 }) {
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const navRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setOpenGroup(null);
+  }, [pathname]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!navRef.current?.contains(event.target as Node)) {
+        setOpenGroup(null);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpenGroup(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
   return (
-    <nav className="flex shrink-0 flex-wrap items-center gap-2">
+    <nav className="flex shrink-0 flex-wrap items-center gap-2" ref={navRef}>
       {groups.map((group) => {
         const groupActive = group.links.some((link) => isActive(pathname, link));
+        const isOpen = openGroup === group.label;
 
         return (
-          <details className="relative" key={group.label}>
-            <summary
+          <div className="relative" key={group.label}>
+            <button
+              type="button"
+              aria-expanded={isOpen}
+              aria-haspopup="menu"
               className={cn(
                 linkClass,
                 "list-none cursor-pointer select-none bg-white/60 hover:bg-white/90",
                 groupActive && "bg-brand-highlight shadow-[0_10px_24px_rgba(220,235,21,0.35)]"
               )}
+              onClick={() => setOpenGroup((current) => (current === group.label ? null : group.label))}
             >
               <span>{group.label}</span>
-              <ChevronDown aria-hidden className="ml-1 h-3.5 w-3.5 shrink-0 opacity-70" />
-            </summary>
+              <ChevronDown
+                aria-hidden
+                className={cn("ml-1 h-3.5 w-3.5 shrink-0 opacity-70 transition-transform", isOpen && "rotate-180")}
+              />
+            </button>
 
-            <div className="mt-2 grid min-w-[240px] gap-1 rounded-[24px] border border-brand-primary/10 bg-white/95 p-2 shadow-[0_24px_60px_rgba(7,56,77,0.18)] backdrop-blur md:absolute md:left-0 md:z-50 md:w-72">
+            <div
+              className={cn(
+                "mt-2 hidden min-w-[240px] gap-1 rounded-[24px] border border-brand-primary/10 bg-white/95 p-2 shadow-[0_24px_60px_rgba(7,56,77,0.18)] backdrop-blur md:absolute md:left-0 md:z-50 md:w-72",
+                isOpen && "grid"
+              )}
+              role="menu"
+            >
               {group.links.map((link) => (
                 <Link
                   key={link.href}
@@ -179,12 +222,13 @@ function GroupedNav({
                     isActive(pathname, link) ? "bg-brand-highlight" : "hover:bg-brand-background-soft"
                   )}
                   href={link.href}
+                  onClick={() => setOpenGroup(null)}
                 >
                   {link.label}
                 </Link>
               ))}
             </div>
-          </details>
+          </div>
         );
       })}
     </nav>
