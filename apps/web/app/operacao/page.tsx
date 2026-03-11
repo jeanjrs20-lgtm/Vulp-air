@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
+  BadgePlus,
   CalendarClock,
   MapPinned,
   Navigation,
@@ -26,6 +27,7 @@ import {
   XAxis,
   YAxis
 } from "recharts";
+import { authStorage } from "@/lib/auth-storage";
 import { AppShell } from "@/components/app-shell";
 import {
   DashboardChartCard,
@@ -40,6 +42,8 @@ import {
 } from "@/components/dashboard-kit";
 import { RequireAuth } from "@/components/require-auth";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 
 type ServiceOrderStatus =
@@ -113,6 +117,16 @@ type SchedulePayload = {
   items: ScheduleItem[];
 };
 
+type UserRow = {
+  id: string;
+  name: string;
+  email: string;
+  role: "SUPERADMIN" | "ADMIN" | "SUPERVISOR" | "TECNICO" | "LEITOR";
+  team?: string | null;
+  regional?: string | null;
+  createdAt: string;
+};
+
 const WINDOW_DAYS = 30;
 const CHART_COLORS = ["#14b8a6", "#f59e0b", "#ef4444"];
 
@@ -148,10 +162,20 @@ const STATUS_KEY_LABEL: Record<keyof ReportsOverviewPayload["serviceOrders"]["by
 
 export default function OperacaoDashboardPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const user = authStorage.getUser();
+  const canManageTechnicians = user?.role === "SUPERADMIN" || user?.role === "ADMIN";
   const now = new Date();
   const dateFrom = new Date(now.getTime() - WINDOW_DAYS * 24 * 60 * 60_000);
   const weekStart = toDateInput(now);
   const weekEnd = toDateInput(new Date(now.getTime() + 6 * 24 * 60 * 60_000));
+  const [technicianDialogOpen, setTechnicianDialogOpen] = useState(false);
+  const [technicianName, setTechnicianName] = useState("");
+  const [technicianEmail, setTechnicianEmail] = useState("");
+  const [technicianPassword, setTechnicianPassword] = useState("");
+  const [technicianTeam, setTechnicianTeam] = useState("");
+  const [technicianRegional, setTechnicianRegional] = useState("");
+  const [technicianError, setTechnicianError] = useState<string | null>(null);
 
   const reportQuery = useQuery({
     queryKey: ["operacao-dashboard-report"],
@@ -180,9 +204,53 @@ export default function OperacaoDashboardPage() {
       )
   });
 
+  const usersQuery = useQuery({
+    queryKey: ["operacao-dashboard-users"],
+    queryFn: () => api.get<UserRow[]>("/users"),
+    enabled: canManageTechnicians
+  });
+
+  const createTechnicianMutation = useMutation({
+    mutationFn: () =>
+      api.post<UserRow>("/users", {
+        name: technicianName.trim(),
+        email: technicianEmail.trim(),
+        password: technicianPassword,
+        role: "TECNICO",
+        team: technicianTeam.trim() || undefined,
+        regional: technicianRegional.trim() || undefined
+      }),
+    onSuccess: async () => {
+      setTechnicianDialogOpen(false);
+      setTechnicianError(null);
+      setTechnicianName("");
+      setTechnicianEmail("");
+      setTechnicianPassword("");
+      setTechnicianTeam("");
+      setTechnicianRegional("");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["operacao-dashboard-users"] }),
+        queryClient.invalidateQueries({ queryKey: ["operacao-dashboard-monitoring"] }),
+        queryClient.invalidateQueries({ queryKey: ["service-order-options"] }),
+        queryClient.invalidateQueries({ queryKey: ["routing-options"] }),
+        queryClient.invalidateQueries({ queryKey: ["desk-options"] })
+      ]);
+    },
+    onError: (error) => {
+      setTechnicianError(error.message);
+    }
+  });
+
   const report = reportQuery.data;
   const monitoring = monitoringQuery.data;
   const schedule = scheduleQuery.data?.items ?? [];
+  const technicians = useMemo(
+    () =>
+      (usersQuery.data ?? [])
+        .filter((item) => item.role === "TECNICO")
+        .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
+    [usersQuery.data]
+  );
 
   const activeOrders = useMemo(() => {
     if (!report) {
@@ -266,7 +334,7 @@ export default function OperacaoDashboardPage() {
       : 0;
 
   const refreshAll = async () => {
-    await Promise.all([reportQuery.refetch(), monitoringQuery.refetch(), scheduleQuery.refetch()]);
+    await Promise.all([reportQuery.refetch(), monitoringQuery.refetch(), scheduleQuery.refetch(), usersQuery.refetch()]);
   };
 
   const isRefreshing = reportQuery.isRefetching || monitoringQuery.isRefetching || scheduleQuery.isRefetching;
@@ -277,6 +345,93 @@ export default function OperacaoDashboardPage() {
         <DashboardHero
           actions={
             <>
+              {canManageTechnicians ? (
+                <Dialog open={technicianDialogOpen} onOpenChange={setTechnicianDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button type="button" variant="outline">
+                      <BadgePlus className="mr-1 h-4 w-4" />
+                      Cadastrar tecnico
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Novo tecnico de campo</DialogTitle>
+                    </DialogHeader>
+                    <form
+                      className="space-y-3"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        setTechnicianError(null);
+                        createTechnicianMutation.mutate();
+                      }}
+                    >
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="md:col-span-2">
+                          <label className="mb-1 block text-sm font-semibold text-brand-primary">Nome completo</label>
+                          <Input
+                            required
+                            value={technicianName}
+                            onChange={(event) => setTechnicianName(event.target.value)}
+                            placeholder="Ex.: Joao Silva"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-semibold text-brand-primary">E-mail</label>
+                          <Input
+                            required
+                            type="email"
+                            value={technicianEmail}
+                            onChange={(event) => setTechnicianEmail(event.target.value)}
+                            placeholder="tecnico@empresa.com"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-semibold text-brand-primary">Senha inicial</label>
+                          <Input
+                            required
+                            minLength={6}
+                            type="password"
+                            value={technicianPassword}
+                            onChange={(event) => setTechnicianPassword(event.target.value)}
+                            placeholder="Minimo 6 caracteres"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-semibold text-brand-primary">Equipe</label>
+                          <Input
+                            value={technicianTeam}
+                            onChange={(event) => setTechnicianTeam(event.target.value)}
+                            placeholder="Ex.: HVAC SP 01"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-semibold text-brand-primary">Regional</label>
+                          <Input
+                            value={technicianRegional}
+                            onChange={(event) => setTechnicianRegional(event.target.value)}
+                            placeholder="Ex.: Sudeste"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-brand-primary/10 bg-brand-background-soft/45 px-3 py-2 text-xs text-slate-600">
+                        O tecnico sera criado com perfil operacional e passara a aparecer nas telas de monitoramento,
+                        agenda, roteirizacao e ordens de servico.
+                      </div>
+
+                      {technicianError ? (
+                        <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                          {technicianError}
+                        </p>
+                      ) : null}
+
+                      <Button className="w-full" disabled={createTechnicianMutation.isPending} type="submit">
+                        {createTechnicianMutation.isPending ? "Cadastrando..." : "Cadastrar tecnico"}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              ) : null}
               <Button onClick={() => router.push("/service-orders?new=1")} type="button">
                 Nova OS
               </Button>
@@ -355,6 +510,14 @@ export default function OperacaoDashboardPage() {
             note={`${totalCompletedToday} concluidas hoje`}
             value={`${averageCompletionRate.toFixed(1)}%`}
           />
+          {canManageTechnicians ? (
+            <DashboardMetricTile
+              accent="brand"
+              label="Tecnicos cadastrados"
+              note="base ativa de campo"
+              value={technicians.length}
+            />
+          ) : null}
         </section>
 
         <section className="mb-5 grid gap-3 xl:grid-cols-3">
@@ -486,6 +649,12 @@ export default function OperacaoDashboardPage() {
             </div>
 
             <div className="space-y-2">
+              {canManageTechnicians ? (
+                <Button className="w-full justify-start" onClick={() => setTechnicianDialogOpen(true)} type="button">
+                  <BadgePlus className="mr-2 h-4 w-4" />
+                  Cadastrar tecnico
+                </Button>
+              ) : null}
               <Button className="w-full justify-start" onClick={() => router.push("/service-orders")} type="button" variant="outline">
                 <Truck className="mr-2 h-4 w-4" />
                 Ordens de servico
@@ -513,6 +682,63 @@ export default function OperacaoDashboardPage() {
             </div>
           </aside>
         </section>
+
+        {canManageTechnicians ? (
+          <section className="mt-5 grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <article className="app-surface card p-5">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-[0.08em] text-brand-primary">
+                    Equipe tecnica cadastrada
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Base de tecnicos usada em ordens, agendas, roteiros e monitoramento.
+                  </p>
+                </div>
+                <Button onClick={() => usersQuery.refetch()} type="button" variant="outline">
+                  Atualizar equipe
+                </Button>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                {technicians.slice(0, 6).map((technician) => (
+                  <article className="rounded-[22px] border border-brand-primary/10 bg-white/80 p-4" key={technician.id}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-black text-brand-primary">{technician.name}</p>
+                        <p className="mt-1 text-xs text-slate-500">{technician.email}</p>
+                      </div>
+                      <span className="rounded-full bg-brand-background-soft px-3 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-brand-primary">
+                        Tecnico
+                      </span>
+                    </div>
+                    <div className="mt-3 space-y-1 text-xs text-slate-600">
+                      <p>Equipe: {technician.team?.trim() || "Nao informada"}</p>
+                      <p>Regional: {technician.regional?.trim() || "Nao informada"}</p>
+                      <p>Criado em: {new Date(technician.createdAt).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                  </article>
+                ))}
+
+                {!usersQuery.isLoading && technicians.length === 0 ? (
+                  <p className="rounded-[22px] border border-brand-primary/10 bg-white/80 p-4 text-sm text-slate-600">
+                    Nenhum tecnico cadastrado ainda. Use o botao acima para criar o primeiro.
+                  </p>
+                ) : null}
+              </div>
+            </article>
+
+            <aside className="app-surface card p-5">
+              <p className="text-sm font-black uppercase tracking-[0.08em] text-brand-primary">Fluxo do cadastro</p>
+              <div className="mt-3 space-y-2 text-sm text-slate-600">
+                <p>1. Cadastra nome, e-mail, senha inicial, equipe e regional.</p>
+                <p>2. O tecnico entra na base oficial de usuarios com papel operacional.</p>
+                <p>3. O nome passa a aparecer em OS, agenda, roteirizacao, despesas e monitoramento.</p>
+                <p>4. Depois voce pode acompanhar o dispositivo dele na tela de mapa e monitoramento.</p>
+              </div>
+            </aside>
+          </section>
+        ) : null}
       </AppShell>
     </RequireAuth>
   );
